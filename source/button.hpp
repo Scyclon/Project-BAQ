@@ -8,7 +8,7 @@ class Button {
 private:
     Rectangle bounds;   // Button rectangle (position and size)
     string label;  // Button label
-    Color color;        // Button color
+    Color color;        // Button default color
     Color hoverColor;   // Color when hovered over
     Color textColor;
 

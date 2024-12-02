@@ -38,7 +38,3 @@ bool is_chosen(Rectangle rect) {
 }
 
 
-/*help me create a c++ flashcard app with raylib and json.
-which I can store each Flashcard in a json file, and each json file in a "saves" folder
-the Flashcard is a class, and use dynamic array for the cards*/
-

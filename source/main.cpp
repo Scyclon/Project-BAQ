@@ -15,7 +15,6 @@ enum AppPage {
     LIBRARY,
     FLASHCARD,
     CREATE_DECK,
-    NAME_DECK
 };
 AppPage currentPage = HOME;
 
@@ -43,6 +42,7 @@ Button createButton(280, 230, 240, 60, "Create New File");
 Button libraryButton(280, 320, 240, 60, "Library");
 Button backButton(250, 500, 300, 50, "Back to Home");
 Button saveCardButton(250, 400, 300, 50, "Save Card");
+Button previousCardButton(57, 350, 80, 50, "<<");
 Button finishDeckButton(250, 460, 300, 50, "Finish Deck");
 Button loadButton(250, 500, 300, 50, "Load Selected Deck");
 
@@ -112,27 +112,39 @@ void DrawCreateDeckPage() {
         if (IsKeyPressed(KEY_BACKSPACE) && strlen(saveAsName) > 0) {
             saveAsName[strlen(saveAsName) - 1] = '\0';
         }
-         
     }
 
+    previousCardButton.Draw();
     saveCardButton.Draw();
     finishDeckButton.Draw();
 
-    if (saveCardButton.IsClicked()) {
+    // go back to prervious card
+    if (previousCardButton.IsClicked() && flashcards.size()>0 && currentPage == CREATE_DECK) {
+        memset(frontInput, 0, sizeof(frontInput)); // empty the string
+        memset(backInput, 0, sizeof(backInput));
+        strcpy_s(frontInput, flashcards[flashcards.size() - 1].getFront().c_str());
+        strcpy_s(backInput, flashcards[flashcards.size() - 1].getBack().c_str());
+        flashcards.pop_back();
+    }
+
+    // save the current card
+    if (saveCardButton.IsClicked() && currentPage == CREATE_DECK) {
         flashcards.emplace_back(frontInput, backInput); // function the same with put_back() but more stable
         memset(frontInput, 0, sizeof(frontInput)); // empty the string
         memset(backInput, 0, sizeof(backInput));
     }
 
-    if (finishDeckButton.IsClicked()) {
+    // save the current card deck
+    if (finishDeckButton.IsClicked() && currentPage == CREATE_DECK) {
         if (strlen(saveAsName) > 0) fileName = saveAsName;
         if (!fileName.ends_with(".json")) fileName += ".json";
         SaveFlashcardToJson(flashcards, saveDirectory, fileName);
         currentPage = LIBRARY;
     }
 
+    // back to HOME
     backButton.Draw();
-    if (backButton.IsClicked()) {
+    if (backButton.IsClicked() && currentPage == CREATE_DECK) {
         currentPage = HOME;
     }
 }
@@ -151,14 +163,14 @@ void DrawLibraryPage() {
 
     // Card Deck select
     for (int i = 0; i < existingFile.size(); ++i)
-        if (existingFile[i].IsClicked()) { 
+        if (existingFile[i].IsClicked() && currentPage == LIBRARY) {
             flashcards = LoadFlashcardFromJson(saveDirectory, existingFile[i].getLabel() + ".json");
             currentPage = FLASHCARD; 
         }
 
     // Draw Back button
     backButton.Draw();
-    if (backButton.IsClicked()) {
+    if (backButton.IsClicked() && currentPage == LIBRARY) {
         currentPage = HOME;
     }
 }

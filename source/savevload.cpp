@@ -7,7 +7,7 @@ void SaveFlashcardToJson(const vector<Flashcard>& flashcards,const string& saveD
         jsonArray.emplace_back(card.toJson());
     ofstream file(saveDirectory + "/" + fileName);
     if (file.is_open()) {
-        file << jsonArray.dump(4);
+        file << jsonArray.dump(4); // dump(n), n is
         file.close();
     }
     else cout << "File save failed\n";
