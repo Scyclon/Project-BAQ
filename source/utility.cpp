@@ -4,7 +4,7 @@
 //Common use function
 void DrawTextMiddle(const char* text, Rectangle rec, int font_size, Color color) {
 	int text_width = MeasureText(text, font_size);
-	float offset = rec.width / 6;
+	float offset = rec.width / 8;
 	while (text_width + 10 > rec.width || font_size + 10 > rec.height) {
 		font_size--;
 		text_width = MeasureText(text, font_size);

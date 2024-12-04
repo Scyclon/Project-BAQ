@@ -1,6 +1,6 @@
 #include "raylib.h"
 #include "saveload.hpp"
-#include "button.hpp"
+#include "tech.hpp"
 
 using namespace std;
 using namespace filesystem;
@@ -12,18 +12,23 @@ string saveDirectory = "saves";  // Save folder path
 // Pages
 enum AppPage {
     HOME,
+    CREATE,
     LIBRARY,
     FLASHCARD,
-    CREATE_DECK,
 };
 AppPage currentPage = HOME;
 
-
 // File Attribute
-string fileName = "untitled";
+string currentFile = "untitled";
+string currentFolder = "Default";
+
 int currentFileIndex = 0;
 int selectedFileIndex = 0;
-char saveAsName[128] = "";
+char saveFileName[128] = "";
+
+int currentFolderIndex = 0;
+int selectedFolderIndex = 0;
+char saveFolderName[128] = "";
 
 // Card Attribute
 vector<Flashcard>  flashcards;
@@ -32,42 +37,59 @@ int selectedCardIndex = 0;
 char frontInput[128] = "";
 char backInput[128] = "";
 
-// Libray Component
+// Saving
 vector<Button> existingFile;
 vector<Button> bFlashcardsFront;
 vector<Button> bFlashcardsBack;
+vector<FlipCard> bFlashcards;
 
-// Button objects
-Button createButton(280, 230, 240, 60, "Create New File");
-Button libraryButton(280, 320, 240, 60, "Library");
-Button backButton(250, 500, 300, 50, "Back to Home");
-Button saveCardButton(250, 400, 300, 50, "Save Card");
-Button previousCardButton(57, 350, 80, 50, "<<");
-Button finishDeckButton(250, 460, 300, 50, "Finish Deck");
-Button loadButton(250, 500, 300, 50, "Load Selected Deck");
+// General object
+Button bHome(1110, 20, 60, 60, "HOME");
+Button bSetting(1180, 20, 60, 60, "SET");
 
-//=====================================================================================================================================
-// SAVING AND LOADING
-//=====================================================================================================================================
+// HOMEPAGE object
+FlipCard WELCOME(140, 120, 800, 450, "WELCOME", 50, "", 30);
+Button bNew(1000, 430, 240, 60, "New");
+Button bLibrary(1000, 510, 240, 60, "Library");
 
+
+/*Void DrawSettingPopUp() {
+
+}*/
 
 
 // Home Page
 void DrawHomePage() {
-    DrawTextCentered("Welcome", { 350,100,100,40 }, 50, BLACK);
-    createButton.Draw();
-    libraryButton.Draw();
+    WELCOME.DrawFlipV(GetFrameTime());
+    WELCOME.StartFlip();
+    if (!WELCOME.Is_Front() && !WELCOME.Is_Flipping()) {
+        DrawTextCentered("Click[New] to create a new deck", { 140, 290, 800, 50 }, 50, BLUE);
+        DrawTextCentered("Click [Library] to view your storage", { 140, 350, 800, 50 }, 50, BLUE);
+    }
 
-    if (createButton.IsClicked()) {
-        flashcards.clear();
-        currentPage = CREATE_DECK;
-    }
-    if (libraryButton.IsClicked()) {
-        currentPage = LIBRARY;
-    }
+    bHome.Draw();
+    bSetting.Draw();
+    bNew.Draw();
+    bLibrary.Draw();
+    
+    if (bNew.IsClicked()) currentPage = CREATE;
+    if (bLibrary.IsClicked()) currentPage = LIBRARY;
+    //if (bSetting.IsClicked()) { DrawSettingPopUp(); }
 }
 
+// Creation Page
+void DrawCreatePage() {
+    bHome.Draw();
+    bSetting.Draw();
+}
 
+// Library Page
+void DrawLibraryPage() {
+    bHome.Draw();
+    bSetting.Draw();
+}
+
+/*
 // Create Deck Page
 void DrawCreateDeckPage() {
     DrawTextCentered("Create New Deck", { 200, 60, 400, 60 }, 30, DARKBLUE);
@@ -196,11 +218,21 @@ void DrawFlashcardPage() {
 
     // Draw Next and Back button
 
-}
+
+    int yOffset = 70;
+    for (size_t i = 0; i < flashcards.size(); ++i) {
+        bFlashcards.emplace_back(100, yOffset, 200, 50, flashcards[i].getFront(), flashcards[i].getBack()); // x , y, width, height, text/content
+    }
+    for (size_t i = 0; i < flashcards.size(); ++i) {
+        bFlashcards[i].StartFlip();
+        bFlashcards[i].Draw(GetFrameTime());
+    }
+
+}*/
 
 // Main Loop
 int main() {
-    InitWindow(800, 600, "Flashcard App");
+    InitWindow(1280, 720, "Flashcard App");
     SetTargetFPS(60);
 
     // Ensure save folder exists
@@ -209,23 +241,18 @@ int main() {
 
     while (!WindowShouldClose()) {
         BeginDrawing();
-        ClearBackground(RAYWHITE);
+        ClearBackground(LIGHTGRAY);
+        DrawRectangleLinesEx({ 3,3,1274,714 }, 3, BLACK);
         switch (currentPage) {
         case HOME:
             DrawHomePage();
             break;
-        case CREATE_DECK:
-            DrawCreateDeckPage();
+        case CREATE:
+            DrawCreatePage();
             break;
         case LIBRARY:
             DrawLibraryPage();
             break;
-        case FLASHCARD:
-            DrawFlashcardPage();
-            break;
-        /*case FINAL:
-            DrawFinalPage();
-            break;*/
         }
         EndDrawing();
     }

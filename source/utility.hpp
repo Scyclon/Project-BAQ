@@ -10,3 +10,4 @@ void DrawTextCentered(const char* text, Rectangle rec, int font_size, Color colo
 void DrawTextHover(const char* text, Color color);
 bool is_chosen(Rectangle rect);
 bool is_mouse_hovered(Rectangle rect);
+

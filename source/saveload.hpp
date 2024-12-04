@@ -29,6 +29,7 @@ public:
     }
 };
 
-void SaveFlashcardToJson(const vector<Flashcard>& flashcards, const string& saveDirectory, const string& fileName);
-vector<Flashcard> LoadFlashcardFromJson(const string& saveDirectory, const string& fileName);
-vector<string> GetSavedFiles(const string& saveDirectory);
+void SaveFlashcardToJson(const vector<Flashcard>& flashcards, const string& saveDirectory, const string& folderName, const string& fileName);
+vector<Flashcard> LoadFlashcardFromJson(const string& saveDirectory, const string& folderName, const string& fileName);
+vector<string> GetSavedFolder(const string& saveDirectory);
+vector<string> GetSavedFiles(const string& saveDirectory, const string& folderName);
