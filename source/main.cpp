@@ -62,7 +62,7 @@ Button bLibrary(1000, 510, 240, 60, "Library");
 void DrawHomePage() {
     WELCOME.DrawFlipV(GetFrameTime());
     WELCOME.StartFlip();
-    if (!WELCOME.Is_Front() && !WELCOME.Is_Flipping()) {
+    if (!WELCOME.IsFront() && !WELCOME.IsFlipping()) {
         DrawTextCentered("Click[New] to create a new deck", { 140, 290, 800, 50 }, 50, BLUE);
         DrawTextCentered("Click [Library] to view your storage", { 140, 350, 800, 50 }, 50, BLUE);
     }
@@ -78,15 +78,40 @@ void DrawHomePage() {
 }
 
 // Creation Page
+InputBox ibFileName(40, 50, 1000, 60, "Save as", 30);
+InputBox ibInputFront(40,540,1000,60,"Enter Front Page", 30);
+InputBox ibInputBack(40, 620, 1000, 60, "Enter Front Page", 30);
 void DrawCreatePage() {
     bHome.Draw();
     bSetting.Draw();
+
+    ibFileName.Draw();
+    ibInputFront.Draw();
+    ibInputBack.Draw();
+
+    /*DrawRectangle(40, 50, 1000, 60, LIGHTGRAY);
+    DrawRectangleLinesEx({ 40, 50, 1000, 60 }, 3, BLACK);
+
+    if (strlen(saveFileName) == 0) DrawTextMiddle("Save as ...", { 40, 50, 1000, 60 }, 30, BLACK);
+    else DrawTextMiddle(saveFileName, { 40, 50, 1000, 60 }, 30, BLACK);
+    if (is_mouse_hovered({ 40, 50, 1000, 60 })) {
+        int key = GetKeyPressed();
+        if (key != 0 && key != KEY_ENTER && key != KEY_BACKSPACE && strlen(saveFileName) < 128) {
+            saveFileName[strlen(saveFileName)] = (char)key;
+        }
+        if (IsKeyPressed(KEY_BACKSPACE) && strlen(saveFileName) > 0) {
+            saveFileName[strlen(saveFileName) - 1] = '\0';
+        }
+    }*/
+    if (bHome.IsClicked()) currentPage = HOME;
 }
 
 // Library Page
 void DrawLibraryPage() {
     bHome.Draw();
     bSetting.Draw();
+
+    if (bHome.IsClicked()) currentPage = HOME;
 }
 
 /*

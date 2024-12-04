@@ -49,8 +49,8 @@ public:
     FlipCard(float x, float y, float w, float h, string fr, float sizeFront, string ba, float sizeBack)
         : x(x), y(y), width(w), height(h), frontText(fr), backText(ba), sizeFront(sizeFront), sizeBack(sizeBack) {}
 
-    bool Is_Front() { return showFront; }
-    bool Is_Flipping() { return flipping; }
+    bool IsFront() { return showFront; }
+    bool IsFlipping() { return flipping; }
     void DrawFlipH(float frameTime) {
         if (flipping) {
             flippProgress += frameTime; // flipp speed
@@ -90,5 +90,52 @@ public:
             flippProgress = 0.0;
             showFront = !showFront;
         }
+    }
+};
+
+class InputBox {
+private:
+    float x, y, width, height, fontSize;
+    string label;
+    string text = "\0";
+    Color color = WHITE;
+    int framecounter = 0;
+    bool isTyping = false;
+    int maxChar = 100;
+public:
+    InputBox(float x, float y, float w, float h, const string& label,float fontSize) : x(x), y(y), width(w), height(h), label(label), fontSize(fontSize) {}
+
+    void Draw() {
+        if (CheckCollisionPointRec(GetMousePosition(), { x,y,width,height }) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            SetMouseCursor(MOUSE_CURSOR_IBEAM);
+            isTyping = true;
+        }
+        if (!CheckCollisionPointRec(GetMousePosition(), { x,y,width,height }) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+            isTyping = false;
+        }
+
+        if (isTyping) {
+            framecounter++;
+            int key = GetKeyPressed();
+            if (key != 0 && key != KEY_ENTER && key != KEY_BACKSPACE && text.length() < maxChar)
+                text += key;
+            if (IsKeyPressed(KEY_BACKSPACE) && !text.empty())
+                text.pop_back();
+        }
+
+        DrawRectangle(x, y, width, height, color);
+        DrawRectangleLinesEx({ x, y, width, height }, 3, BLACK);
+        if (text.empty()) DrawTextMiddle(label.c_str(), { x,y,width,height }, fontSize, BLACK);
+        else DrawTextMiddle(text.c_str(), { x,y,width,height }, fontSize, BLACK);
+    }
+
+    string GetText() {
+        return text;
+    }
+    void Clear() {
+        SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+        isTyping = false;
+        text.clear();
     }
 };
