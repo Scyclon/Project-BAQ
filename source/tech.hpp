@@ -9,18 +9,18 @@ private:
     Rectangle bounds;   // Button rectangle (position and size)
     string label;  // Button label
     Color color;        // Button default color
-    Color hoverColor;   // Color when hovered over
+    Color hoverColor = { 130,130,130,100 };   // Color when hovered over
     Color textColor;
 public:
     // Constructor
     Button(float x, float y, float width, float height, const string& label,
-        Color color = LIGHTGRAY, Color hoverColor = GRAY, Color textColor = BLACK)
-        : bounds{ x, y, width, height }, label(label), color(color), hoverColor(hoverColor), textColor(textColor) {}
+        Color color, Color textColor)
+        : bounds{ x, y, width, height }, label(label), color(color), textColor(textColor) {}
 
     // Draw the button
     void Draw() const {
-        Color currentColor = CheckCollisionPointRec(GetMousePosition(), bounds) ? hoverColor : color;
-        DrawRectangleRec(bounds, currentColor);
+        DrawRectangleRec(bounds, color);
+        if (CheckCollisionPointRec(GetMousePosition(), bounds)) DrawRectangleRec(bounds, hoverColor);
         DrawRectangleLinesEx(bounds,3,BLACK);
         DrawTextCentered(label.c_str(), bounds, 25, textColor);
     }
@@ -40,8 +40,8 @@ private:
     float x, y, width, height;
     string frontText, backText;
     float sizeFront, sizeBack;
-    Color colorDefault = GRAY;
-    Color colorHovered = DARKGRAY;
+    Color colorDefault = WHITE;
+    Color colorHovered = { 130,130,130,100 };
     float flippProgress = 0.0;
     float showFront = true;
     bool flipping = false;
@@ -62,7 +62,8 @@ public:
         float scaleX = fabs(flippProgress - 0.5) * 2.0;
         float currentWidth = width * scaleX; // schrink to 0
         float centerX = x + (width - currentWidth) / 2.0;
-        DrawRectangleRec({ centerX,y,currentWidth,height }, (CheckCollisionPointRec(GetMousePosition(), { centerX,y,currentWidth,height }) && !flipping) ? colorHovered : colorDefault);
+        DrawRectangleRec({ centerX,y,currentWidth,height },colorDefault);
+        if (CheckCollisionPointRec(GetMousePosition(), { centerX,y,currentWidth,height }) || flipping) DrawRectangle(centerX, y, currentWidth, height, colorHovered);
         DrawRectangleLinesEx({ centerX,y,currentWidth,height }, 3, BLACK);
 
         if (scaleX >= 1.0) DrawTextCentered(showFront ? frontText.c_str() : backText.c_str(), { centerX,y,currentWidth,height }, showFront ? sizeFront : sizeBack, BLACK);
@@ -79,7 +80,8 @@ public:
         float scaleY = fabs(flippProgress - 0.5) * 2.0;
         float currentHeight = height * scaleY; // schrink to 0
         float centerY = y + (height - currentHeight) / 2.0;
-        DrawRectangleRec({ x,centerY,width,currentHeight }, (CheckCollisionPointRec(GetMousePosition(), { x,centerY,width,currentHeight }) && !flipping) ? colorHovered : colorDefault);
+        DrawRectangleRec({ x,centerY,width,currentHeight }, colorDefault);
+        if (CheckCollisionPointRec(GetMousePosition(), { x,centerY,width,currentHeight }) || flipping) DrawRectangle(x, centerY, width, currentHeight, colorHovered);
         DrawRectangleLinesEx({ x,centerY,width,currentHeight }, 3, BLACK);
         if (scaleY >= 1.0) DrawTextCentered(showFront ? frontText.c_str() : backText.c_str(), { x,centerY,width,currentHeight }, showFront ? sizeFront : sizeBack, BLACK);
     }
@@ -125,6 +127,7 @@ public:
         }
 
         DrawRectangle(x, y, width, height, color);
+        if (isTyping) DrawRectangle(x, y, width, height, { 130,130,130,100 });
         DrawRectangleLinesEx({ x, y, width, height }, 3, BLACK);
         if (text.empty()) DrawTextMiddle(label.c_str(), { x,y,width,height }, fontSize, BLACK);
         else DrawTextMiddle(text.c_str(), { x,y,width,height }, fontSize, BLACK);

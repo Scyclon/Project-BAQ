@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "saveload.hpp"
 #include "tech.hpp"
+#include "utility.hpp"
 
 using namespace std;
 using namespace filesystem;
@@ -44,13 +45,13 @@ vector<Button> bFlashcardsBack;
 vector<FlipCard> bFlashcards;
 
 // General object
-Button bHome(1110, 20, 60, 60, "HOME");
-Button bSetting(1180, 20, 60, 60, "SET");
+Button bHome(1110, 20, 60, 60, "HOME",WHITE,DARKBLUE);
+Button bSetting(1180, 20, 60, 60, "SET",WHITE,DARKBLUE);
 
 // HOMEPAGE object
 FlipCard WELCOME(140, 120, 800, 450, "WELCOME", 50, "", 30);
-Button bNew(1000, 430, 240, 60, "New");
-Button bLibrary(1000, 510, 240, 60, "Library");
+Button bNew(1000, 430, 240, 60, "New",WHITE,BLUE);
+Button bLibrary(1000, 510, 240, 60, "Library",WHITE,BLUE);
 
 
 /*Void DrawSettingPopUp() {
@@ -63,7 +64,7 @@ void DrawHomePage() {
     WELCOME.DrawFlipV(GetFrameTime());
     WELCOME.StartFlip();
     if (!WELCOME.IsFront() && !WELCOME.IsFlipping()) {
-        DrawTextCentered("Click[New] to create a new deck", { 140, 290, 800, 50 }, 50, BLUE);
+        DrawTextCentered("Click [New] to create a new deck", { 140, 290, 800, 50 }, 50, BLUE);
         DrawTextCentered("Click [Library] to view your storage", { 140, 350, 800, 50 }, 50, BLUE);
     }
 
@@ -78,9 +79,14 @@ void DrawHomePage() {
 }
 
 // Creation Page
-InputBox ibFileName(40, 50, 1000, 60, "Save as", 30);
-InputBox ibInputFront(40,540,1000,60,"Enter Front Page", 30);
-InputBox ibInputBack(40, 620, 1000, 60, "Enter Front Page", 30);
+InputBox ibFileName(40, 50, 1000, 50, "Save as", 30);
+InputBox ibInputFront(40, 560, 1000, 50, "Enter Front Page", 30);
+InputBox ibInputBack(40, 630, 1000, 50, "Enter Front Page", 30);
+Button bSaveCard(1080, 560, 160, 35, "SAVE", WHITE, BLUE);
+Button bFinishDeck(1080, 602.5, 160, 35, "FINISH", WHITE, BLUE);
+vector<string> cardFront;
+vector<string> cardBack;
+
 void DrawCreatePage() {
     bHome.Draw();
     bSetting.Draw();
@@ -88,6 +94,27 @@ void DrawCreatePage() {
     ibFileName.Draw();
     ibInputFront.Draw();
     ibInputBack.Draw();
+    bSaveCard.Draw();
+    bFinishDeck.Draw();
+    DrawRecWithLines(1080, 645, 160, 35, WHITE, 3);
+    DrawTextCentered("Total:", { 1080, 645, 160, 35 }, 25, BLUE);
+
+    // Flashcard display
+    DrawRecWithLines(40, 120, 1200, 400, GRAY, 3); // Draw frame
+
+    if (bSaveCard.IsClicked() && !ibInputFront.GetText().empty() && !ibInputBack.GetText().empty()) {
+        cardFront.emplace_back(ibInputFront.GetText());
+        cardBack.emplace_back(ibInputBack.GetText());
+        flashcards.emplace_back(ibInputFront.GetText(), ibInputBack.GetText());
+        ibInputFront.Clear();
+        ibInputBack.Clear();
+    }
+    if (bFinishDeck.IsClicked() && !cardFront.empty() && !cardBack.empty()) {
+        string fulldirectory = saveDirectory + "/" + currentFolder;
+        if (!exists(fulldirectory))
+            create_directories(fulldirectory);
+        SaveFlashcardToJson(flashcards, fulldirectory, currentFile);
+    }
 
     /*DrawRectangle(40, 50, 1000, 60, LIGHTGRAY);
     DrawRectangleLinesEx({ 40, 50, 1000, 60 }, 3, BLACK);
@@ -263,6 +290,8 @@ int main() {
     // Ensure save folder exists
     if (!exists(saveDirectory))
         create_directories(saveDirectory);
+    if (!exists(saveDirectory + "/Default"))
+        create_directories(saveDirectory + "/Default");
 
     while (!WindowShouldClose()) {
         BeginDrawing();

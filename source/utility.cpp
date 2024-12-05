@@ -22,6 +22,11 @@ void DrawTextCentered(const char* text, Rectangle rec, int font_size, Color colo
 	DrawText(text, text_position.x, text_position.y, font_size, color);
 }
 
+void DrawRecWithLines(float x, float y, float width, float height, Color color, int lineThick) {
+	DrawRectangle(x, y, width, height, color);
+	DrawRectangleLinesEx({ x,y,width,height }, lineThick, BLACK);
+}
+
 void DrawTextHover(const char* text, Color color) {
 	Vector2 mouse = GetMousePosition();
 	int font_size = 15;

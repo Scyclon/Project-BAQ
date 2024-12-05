@@ -1,11 +1,11 @@
 #include "saveload.hpp"
 
 // Function to save flashcards to JSON
-void SaveFlashcardToJson(const vector<Flashcard>& flashcards, const string& saveDirectory, const string& folderName, const string& fileName) {
+void SaveFlashcardToJson(const vector<Flashcard>& flashcards, const string& fullDirectory, const string& fileName) {
     json jsonArray;
     for (const auto& card : flashcards)
         jsonArray.emplace_back(card.toJson());
-    ofstream file(saveDirectory + "/" + folderName + "/" + fileName);
+    ofstream file(fullDirectory + "/" + fileName);
     if (file.is_open()) {
         file << jsonArray.dump(4);
         file.close();
@@ -13,9 +13,9 @@ void SaveFlashcardToJson(const vector<Flashcard>& flashcards, const string& save
     else cout << "File save failed\n";
 }
 
-vector<Flashcard> LoadFlashcardFromJson(const string& saveDirectory, const string& folderName, const string& fileName) {
+vector<Flashcard> LoadFlashcardFromJson(const string& fullDirectory, const string& fileName) {
     vector<Flashcard> flashcards;
-    ifstream file(saveDirectory + "/" + folderName + "/" + fileName);
+    ifstream file(fullDirectory + "/" + fileName);
     if (file.is_open()) {
         json jsonArray;
         file >> jsonArray;
@@ -35,9 +35,9 @@ vector<string> GetSavedFolder(const string& saveDirectory) {
 }
 
 // Fetch all JSON files in folder
-vector<string> GetSavedFiles(const string& saveDirectory, const string& folderName) {
+vector<string> GetSavedFiles(const string& fullDirectory) {
     vector<string> savedFiles;
-    for (const auto& fileName : directory_iterator(saveDirectory + "/" + folderName))
+    for (const auto& fileName : directory_iterator(fullDirectory))
         if (fileName.path().extension() == ".json") // look for .json file only
             savedFiles.emplace_back(fileName.path().filename().string());
     return savedFiles;
