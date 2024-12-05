@@ -7,6 +7,7 @@ using namespace std;
 using namespace filesystem;
 using namespace nlohmann;
 
+#define bgColor {200,200,200,255}
 
 string saveDirectory = "saves";  // Save folder path
 
@@ -96,20 +97,37 @@ void DrawCreatePage() {
     ibInputBack.Draw();
     bSaveCard.Draw();
     bFinishDeck.Draw();
+
     DrawRecWithLines(1080, 645, 160, 35, WHITE, 3);
     DrawTextCentered("Total:", { 1080, 645, 160, 35 }, 25, BLUE);
 
     // Flashcard display
-    DrawRecWithLines(40, 120, 1200, 400, GRAY, 3); // Draw frame
+    DrawRectangle(40, 120, 1200, 400, GRAY); // Draw frame
+
+    float initY = 130;
+    float boxSizeY = 40;
+    
     if (!flashcards.empty()) {
+        
         for (size_t i = 0; i < flashcards.size(); ++i) {
-            DrawRectangle(50, (float)(130 + (i * 100)), 1000, 40, WHITE);
-            DrawTextMiddle(flashcards[i].getFront().c_str(), { 50, (float)(130 + (i * 100)), 1000, 40 }, 30, BLUE);
-            DrawRectangle(50, (float)(170 + (i * 100)), 1000, 40, WHITE);
-            DrawTextMiddle(flashcards[i].getBack().c_str(), { 50, (float)(170 + (i * 100)), 1000, 40 }, 30, BLUE);
+            if (((float)(initY + (i * 100))) + boxSizeY < 540) {
+                DrawRectangle(50, (float)(initY + (i * 100)), 1000, boxSizeY, WHITE);
+                DrawTextMiddle(flashcards[i].getFront().c_str(), { 50, (float)(initY + (i * 100)), 1000, boxSizeY }, 30, BLUE);
+            }
+            if ((float)(initY + boxSizeY + (i * 100)) + boxSizeY < 540) {
+                DrawRectangle(50, (float)(initY + boxSizeY + (i * 100)), 1000, boxSizeY, WHITE);
+                DrawTextMiddle(flashcards[i].getBack().c_str(), { 50, (float)(initY + boxSizeY + (i * 100)), 1000, boxSizeY }, 30, BLUE);
+            }
+            if (((float)(initY + (i * 100))) + boxSizeY * 2 < 540) {
+                DrawRectangleLinesEx({ 50, (float)(initY + (i * 100)), 1000, boxSizeY * 2 }, 3, BLACK);
+                DrawLineEx({ 50,(float)(initY + (i * 100)) / 2 }, { 1050,(float)(initY + (i * 100)) / 2 }, 3, BLACK);
+            }
         }
     }
 
+    DrawRectangle(40, 520, 1200, 40, bgColor);
+    DrawRectangleLinesEx({ 40, 120, 1200, 400 }, 3, BLACK);
+    
 
     if (bSaveCard.IsClicked() && !ibInputFront.GetText().empty() && !ibInputBack.GetText().empty()) {
         cardFront.emplace_back(ibInputFront.GetText());
@@ -125,6 +143,7 @@ void DrawCreatePage() {
         SaveFlashcardToJson(flashcards, fulldirectory, currentFile);
         flashcards.clear();
     }
+    
 
     /*DrawRectangle(40, 50, 1000, 60, LIGHTGRAY);
     DrawRectangleLinesEx({ 40, 50, 1000, 60 }, 3, BLACK);
@@ -305,7 +324,7 @@ int main() {
 
     while (!WindowShouldClose()) {
         BeginDrawing();
-        ClearBackground(LIGHTGRAY);
+        ClearBackground(bgColor);
         DrawRectangleLinesEx({ 3,3,1274,714 }, 3, BLACK);
         switch (currentPage) {
         case HOME:
