@@ -25,18 +25,18 @@ string currentFolder = "Default";
 
 int currentFileIndex = 0;
 int selectedFileIndex = 0;
-char saveFileName[128] = "";
+char saveFileName[40] = "";
 
 int currentFolderIndex = 0;
 int selectedFolderIndex = 0;
-char saveFolderName[128] = "";
+char saveFolderName[40] = "";
 
 // Card Attribute
 vector<Flashcard>  flashcards;
 int currentCardIndex = 0;
 int selectedCardIndex = 0;
-char frontInput[128] = "";
-char backInput[128] = "";
+char frontInput[40] = "";
+char backInput[40] = "";
 
 // Saving
 vector<Button> existingFile;
@@ -101,6 +101,15 @@ void DrawCreatePage() {
 
     // Flashcard display
     DrawRecWithLines(40, 120, 1200, 400, GRAY, 3); // Draw frame
+    if (!flashcards.empty()) {
+        for (size_t i = 0; i < flashcards.size(); ++i) {
+            DrawRectangle(50, (float)(130 + (i * 100)), 1000, 40, WHITE);
+            DrawTextMiddle(flashcards[i].getFront().c_str(), { 50, (float)(130 + (i * 100)), 1000, 40 }, 30, BLUE);
+            DrawRectangle(50, (float)(170 + (i * 100)), 1000, 40, WHITE);
+            DrawTextMiddle(flashcards[i].getBack().c_str(), { 50, (float)(170 + (i * 100)), 1000, 40 }, 30, BLUE);
+        }
+    }
+
 
     if (bSaveCard.IsClicked() && !ibInputFront.GetText().empty() && !ibInputBack.GetText().empty()) {
         cardFront.emplace_back(ibInputFront.GetText());
@@ -109,11 +118,12 @@ void DrawCreatePage() {
         ibInputFront.Clear();
         ibInputBack.Clear();
     }
-    if (bFinishDeck.IsClicked() && !cardFront.empty() && !cardBack.empty()) {
+    if (bFinishDeck.IsClicked() && !flashcards.empty()) {
         string fulldirectory = saveDirectory + "/" + currentFolder;
         if (!exists(fulldirectory))
             create_directories(fulldirectory);
         SaveFlashcardToJson(flashcards, fulldirectory, currentFile);
+        flashcards.clear();
     }
 
     /*DrawRectangle(40, 50, 1000, 60, LIGHTGRAY);

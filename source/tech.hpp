@@ -103,7 +103,7 @@ private:
     Color color = WHITE;
     int framecounter = 0;
     bool isTyping = false;
-    int maxChar = 100;
+    int maxChar = 40;
 public:
     InputBox(float x, float y, float w, float h, const string& label,float fontSize) : x(x), y(y), width(w), height(h), label(label), fontSize(fontSize) {}
 
