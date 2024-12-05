@@ -35,11 +35,16 @@ void DrawTextHover(const char* text, Color color) {
 	DrawText(text, text_position.x, text_position.y, font_size, color);
 }
 
-bool is_mouse_hovered(Rectangle rect) {
-	return CheckCollisionPointRec(GetMousePosition(), rect);
-}
 bool is_chosen(Rectangle rect) {
 	return (is_mouse_hovered(rect) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
 }
+
+bool is_mouse_hovered(Rectangle rect) {
+	return CheckCollisionPointRec(GetMousePosition(), rect);
+}
+void SortStrings(vector<string>& strings) {
+	sort(strings.begin(), strings.end());
+}
+
 
 

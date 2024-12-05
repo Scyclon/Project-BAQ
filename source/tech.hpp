@@ -4,6 +4,7 @@
 #include "utility.hpp"
 
 using namespace std;
+
 class Button {
 private:
     Rectangle bounds;   // Button rectangle (position and size)
@@ -33,7 +34,6 @@ public:
         return CheckCollisionPointRec(GetMousePosition(), bounds) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
     }
 };
-
 
 class FlipCard {
 private:
@@ -136,9 +136,41 @@ public:
     string GetText() {
         return text;
     }
+    void SetText(string setText) {
+        text = setText;
+    }
     void Clear() {
         SetMouseCursor(MOUSE_CURSOR_DEFAULT);
         isTyping = false;
         text.clear();
+    }
+};
+
+class Roller {
+private:
+    float x, y, width, height;
+    float offset = 0;
+    float maxOffset;
+    bool isVertical;
+    float speed = 10;
+public:
+    Roller(float x, float y, float width, float height, float maxOffset, bool isVertical)
+        : x(x), y(y), width(width), height(height), maxOffset(maxOffset), isVertical(isVertical) {
+    }
+    void Draw() {
+        Rectangle roller = { x,y,isVertical ? width : (width / (maxOffset / speed)) ,isVertical ? (height / (maxOffset / speed)) : height };
+        float scroll = -GetMouseWheelMove();
+        offset += scroll * speed;
+        if (offset > maxOffset) offset = maxOffset;
+        if (offset < 0) offset = 0;
+        if (isVertical) roller.y += offset;
+        else roller.x += offset;
+        //DrawRectangle(x, y, width, height, GRAY);
+        DrawRectangleRounded(roller, 10, 5, WHITE);
+        //DrawRectangleLinesEx({ x, y, width, height }, 3, BLACK);
+    }
+
+    float getOffset() const{
+        return offset;
     }
 };

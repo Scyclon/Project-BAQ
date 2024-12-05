@@ -1,7 +1,10 @@
 #pragma once
+#include <vector>
+#include <string>
+#include <algorithm> // for sort
 #include "raylib.h"
 #include "raymath.h"
-#include <iostream>
+
 using namespace std;
 
 
@@ -11,4 +14,4 @@ void DrawRecWithLines(float x, float y, float width, float height, Color color, 
 void DrawTextHover(const char* text, Color color);
 bool is_chosen(Rectangle rect);
 bool is_mouse_hovered(Rectangle rect);
-
+void SortStrings(vector<string>& strings);

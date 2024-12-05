@@ -23,6 +23,9 @@ public:
     string getFront() { return front; }
     string getBack() { return back; }
 
+    void setFront(string setFront) { front = setFront; }
+    void setBack(string setBack) { back = setBack; }
+
     json toJson() const { return { {"front", front}, {"back", back} }; }
     static Flashcard fromJson(const json& jsonFlashcard) {
         return Flashcard(jsonFlashcard.at("front"), jsonFlashcard.at("back"));

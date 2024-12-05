@@ -9,21 +9,23 @@ using namespace nlohmann;
 
 #define bgColor {200,200,200,255}
 
+
+// Saving
 string saveDirectory = "saves";  // Save folder path
+string currentFile = "untitled";
+string currentFolder = "Default";
 
 // Pages
 enum AppPage {
     HOME,
-    CREATE,
+    CREATECARD,
+    CREATEFOLDER,
     LIBRARY,
     FLASHCARD,
 };
 AppPage currentPage = HOME;
 
-// File Attribute
-string currentFile = "untitled";
-string currentFolder = "Default";
-
+// Input
 int currentFileIndex = 0;
 int selectedFileIndex = 0;
 char saveFileName[40] = "";
@@ -38,8 +40,7 @@ int currentCardIndex = 0;
 int selectedCardIndex = 0;
 char frontInput[40] = "";
 char backInput[40] = "";
-
-// Saving
+bool cardEditMode = false;
 vector<Button> existingFile;
 vector<Button> bFlashcardsFront;
 vector<Button> bFlashcardsBack;
@@ -71,15 +72,15 @@ void DrawHomePage() {
 
     bHome.Draw();
     bSetting.Draw();
+    
     bNew.Draw();
     bLibrary.Draw();
-    
-    if (bNew.IsClicked()) currentPage = CREATE;
+    if (bNew.IsClicked()) currentPage = CREATECARD;
     if (bLibrary.IsClicked()) currentPage = LIBRARY;
     //if (bSetting.IsClicked()) { DrawSettingPopUp(); }
 }
 
-// Creation Page
+// Create-File
 InputBox ibFileName(40, 50, 1000, 50, "Save as", 30);
 InputBox ibInputFront(40, 560, 1000, 50, "Enter Front Page", 30);
 InputBox ibInputBack(40, 630, 1000, 50, "Enter Front Page", 30);
@@ -88,62 +89,86 @@ Button bFinishDeck(1080, 602.5, 160, 35, "FINISH", WHITE, BLUE);
 vector<string> cardFront;
 vector<string> cardBack;
 
-void DrawCreatePage() {
+float initFileY = 130;
+float boxFileHeight = 40;
+Roller rCreatePageRoller(1220, 120, 20, 400, boxFileHeight* flashcards.size() + 400, true);
+float offsetY = 0;
+
+void DrawCreateCardPage() {
     bHome.Draw();
     bSetting.Draw();
-
-    ibFileName.Draw();
-    ibInputFront.Draw();
-    ibInputBack.Draw();
-    bSaveCard.Draw();
-    bFinishDeck.Draw();
-
-    DrawRecWithLines(1080, 645, 160, 35, WHITE, 3);
-    DrawTextCentered("Total:", { 1080, 645, 160, 35 }, 25, BLUE);
+    if (bHome.IsClicked()) {
+        flashcards.clear();
+        currentPage = HOME;
+    }
 
     // Flashcard display
     DrawRectangle(40, 120, 1200, 400, GRAY); // Draw frame
-
-    float initY = 130;
-    float boxSizeY = 40;
-    
+    offsetY = rCreatePageRoller.getOffset();
     if (!flashcards.empty()) {
         
         for (size_t i = 0; i < flashcards.size(); ++i) {
-            if (((float)(initY + (i * 100))) + boxSizeY < 540) {
-                DrawRectangle(50, (float)(initY + (i * 100)), 1000, boxSizeY, WHITE);
-                DrawTextMiddle(flashcards[i].getFront().c_str(), { 50, (float)(initY + (i * 100)), 1000, boxSizeY }, 30, BLUE);
+            if (((float)(initFileY + (i * 100)) + boxFileHeight - offsetY <= 560) && ((float)(initFileY + (i * 100)) - offsetY >= 80 )) {
+                DrawRectangle(50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight, WHITE);
+                DrawTextMiddle(flashcards[i].getFront().c_str(), { 50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight }, 30, BLUE);
             }
-            if ((float)(initY + boxSizeY + (i * 100)) + boxSizeY < 540) {
-                DrawRectangle(50, (float)(initY + boxSizeY + (i * 100)), 1000, boxSizeY, WHITE);
-                DrawTextMiddle(flashcards[i].getBack().c_str(), { 50, (float)(initY + boxSizeY + (i * 100)), 1000, boxSizeY }, 30, BLUE);
+            if (((float)(initFileY + (i * 100)) + boxFileHeight - offsetY <= 560) && ((float)(initFileY + (i * 100)) - offsetY >= 80)) {
+                DrawRectangle(50, (float)(initFileY + boxFileHeight + (i * 100)) - offsetY, 1000, boxFileHeight, WHITE);
+                DrawTextMiddle(flashcards[i].getBack().c_str(), { 50, (float)(initFileY + boxFileHeight + (i * 100)) - offsetY, 1000, boxFileHeight }, 30, BLUE);
             }
-            if (((float)(initY + (i * 100))) + boxSizeY * 2 < 540) {
-                DrawRectangleLinesEx({ 50, (float)(initY + (i * 100)), 1000, boxSizeY * 2 }, 3, BLACK);
-                DrawLineEx({ 50,(float)(initY + (i * 100)) / 2 }, { 1050,(float)(initY + (i * 100)) / 2 }, 3, BLACK);
+            if (((float)(initFileY + (i * 100)) + boxFileHeight * 2 - offsetY * 2 <= 560) && ((float)(initFileY + (i * 100)) - offsetY >= 80)) {
+                DrawRectangleLinesEx({ 50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight * 2 }, 3, BLACK);
+                DrawLineEx({ 50,(float)(initFileY + (i * 100)) + boxFileHeight - offsetY }, { 1050,(float)(initFileY + (i * 100)) + boxFileHeight - offsetY }, 3, BLACK);
+                if (is_chosen({ 50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight * 2 })) {
+                    ibInputFront.SetText(flashcards[i].getFront());
+                    ibInputBack.SetText(flashcards[i].getBack());
+                    currentCardIndex = i;
+                    cardEditMode = true;
+
+                }
             }
         }
     }
-
-    DrawRectangle(40, 520, 1200, 40, bgColor);
+    DrawRectangle(40, 40, 1200, 80, bgColor);
+    DrawRectangle(40, 520, 1200, 80, bgColor);
     DrawRectangleLinesEx({ 40, 120, 1200, 400 }, 3, BLACK);
+    rCreatePageRoller.Draw();
+    offsetY = rCreatePageRoller.getOffset();
     
+    // Typing Box
+    ibFileName.Draw();
+    ibInputFront.Draw();
+    ibInputBack.Draw();
 
+    // Function Button
+    bSaveCard.Draw();
+    bFinishDeck.Draw();
     if (bSaveCard.IsClicked() && !ibInputFront.GetText().empty() && !ibInputBack.GetText().empty()) {
-        cardFront.emplace_back(ibInputFront.GetText());
-        cardBack.emplace_back(ibInputBack.GetText());
-        flashcards.emplace_back(ibInputFront.GetText(), ibInputBack.GetText());
+        if (!cardEditMode) {
+            //cardFront.emplace_back(ibInputFront.GetText());
+            //cardBack.emplace_back(ibInputBack.GetText());
+            flashcards.emplace_back(ibInputFront.GetText(), ibInputBack.GetText());
+        }
+        else {
+            flashcards[currentCardIndex].setFront(ibInputFront.GetText());
+            flashcards[currentCardIndex].setBack(ibInputBack.GetText());
+            cardEditMode = false;
+        }
         ibInputFront.Clear();
         ibInputBack.Clear();
+
     }
     if (bFinishDeck.IsClicked() && !flashcards.empty()) {
-        string fulldirectory = saveDirectory + "/" + currentFolder;
-        if (!exists(fulldirectory))
-            create_directories(fulldirectory);
-        SaveFlashcardToJson(flashcards, fulldirectory, currentFile);
-        flashcards.clear();
+        ibInputFront.Clear();
+        ibInputBack.Clear();
+        currentPage = HOME;
     }
     
+    // Display total number of cards
+    DrawRecWithLines(1080, 645, 160, 35, WHITE, 3); //Total Card number
+    DrawTextCentered("Total:", { 1080, 645, 160, 35 }, 25, BLUE);
+
+
 
     /*DrawRectangle(40, 50, 1000, 60, LIGHTGRAY);
     DrawRectangleLinesEx({ 40, 50, 1000, 60 }, 3, BLACK);
@@ -159,8 +184,55 @@ void DrawCreatePage() {
             saveFileName[strlen(saveFileName) - 1] = '\0';
         }
     }*/
-    if (bHome.IsClicked()) currentPage = HOME;
+    
 }
+
+// Create-Folder
+float initFolderY = 120;
+float boxFolderHeight = 40;
+vector<Button> bExistingFolder;
+
+void DrawCreateFolderPage() {
+    bHome.Draw();
+    bSetting.Draw();
+    if (bHome.IsClicked()) currentPage = HOME;
+
+    // Flashcard display
+    DrawRectangle(40, 120, 1200, 400, GRAY); // Draw frame
+    offsetY = rCreatePageRoller.getOffset();
+    if (!flashcards.empty()) {
+
+        for (size_t i = 0; i < flashcards.size(); ++i) {
+            if (((float)(initFileY + (i * 100)) + boxFileHeight - offsetY <= 560) && ((float)(initFileY + (i * 100)) - offsetY >= 80)) {
+                DrawRectangle(50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight, WHITE);
+                DrawTextMiddle(flashcards[i].getFront().c_str(), { 50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight }, 30, BLUE);
+            }
+            if (((float)(initFileY + (i * 100)) + boxFileHeight - offsetY <= 560) && ((float)(initFileY + (i * 100)) - offsetY >= 80)) {
+                DrawRectangle(50, (float)(initFileY + boxFileHeight + (i * 100)) - offsetY, 1000, boxFileHeight, WHITE);
+                DrawTextMiddle(flashcards[i].getBack().c_str(), { 50, (float)(initFileY + boxFileHeight + (i * 100)) - offsetY, 1000, boxFileHeight }, 30, BLUE);
+            }
+            if (((float)(initFileY + (i * 100)) + boxFileHeight * 2 - offsetY * 2 <= 560) && ((float)(initFileY + (i * 100)) - offsetY >= 80)) {
+                DrawRectangleLinesEx({ 50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight * 2 }, 3, BLACK);
+                DrawLineEx({ 50,(float)(initFileY + (i * 100)) + boxFileHeight - offsetY }, { 1050,(float)(initFileY + (i * 100)) + boxFileHeight - offsetY }, 3, BLACK);
+            }
+        }
+    }
+    DrawRectangle(40, 40, 1200, 80, bgColor);
+    DrawRectangle(40, 520, 1200, 80, bgColor);
+    DrawRectangleLinesEx({ 40, 120, 1200, 400 }, 3, BLACK);
+    rCreatePageRoller.Draw();
+    offsetY = rCreatePageRoller.getOffset();
+
+
+
+
+    string fulldirectory = saveDirectory + "/" + currentFolder;
+    if (!exists(fulldirectory))
+        create_directories(fulldirectory);
+    SaveFlashcardToJson(flashcards, fulldirectory, currentFile);
+    flashcards.clear();
+}
+
 
 // Library Page
 void DrawLibraryPage() {
@@ -330,8 +402,8 @@ int main() {
         case HOME:
             DrawHomePage();
             break;
-        case CREATE:
-            DrawCreatePage();
+        case CREATECARD:
+            DrawCreateCardPage();
             break;
         case LIBRARY:
             DrawLibraryPage();
