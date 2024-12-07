@@ -18,6 +18,15 @@ public:
         Color color, Color textColor)
         : bounds{ x, y, width, height }, label(label), color(color), textColor(textColor) {}
 
+    // 
+    void SetY(float setY) {
+        bounds.y = setY;
+    }
+
+    float GetY() {
+        return bounds.y;
+    }
+
     // Draw the button
     void Draw() const {
         DrawRectangleRec(bounds, color);
@@ -107,6 +116,15 @@ private:
 public:
     InputBox(float x, float y, float w, float h, const string& label,float fontSize) : x(x), y(y), width(w), height(h), label(label), fontSize(fontSize) {}
 
+    void SetY(float setY) {
+        y = setY;
+    }
+    float GetY() {
+        return y;
+    }
+    float GetHeight() {
+        return height;
+    }
     void Draw() {
         if (CheckCollisionPointRec(GetMousePosition(), { x,y,width,height }) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             SetMouseCursor(MOUSE_CURSOR_IBEAM);
@@ -155,19 +173,26 @@ private:
     float speed = 10;
 public:
     Roller(float x, float y, float width, float height, float maxOffset, bool isVertical)
-        : x(x), y(y), width(width), height(height), maxOffset(maxOffset), isVertical(isVertical) {
-    }
+        : x(x), y(y), width(width), height(height), maxOffset(maxOffset), isVertical(isVertical) {}
+
     void Draw() {
         Rectangle roller = { x,y,isVertical ? width : (width / (maxOffset / speed)) ,isVertical ? (height / (maxOffset / speed)) : height };
         float scroll = -GetMouseWheelMove();
         offset += scroll * speed;
         if (offset > maxOffset) offset = maxOffset;
         if (offset < 0) offset = 0;
-        if (isVertical) roller.y += offset;
-        else roller.x += offset;
-        //DrawRectangle(x, y, width, height, GRAY);
+        if (isVertical) {
+            roller.y += offset;
+            if (roller.y + roller.height > y + height) roller.y = y + height - roller.height;
+        }
+        else {
+            roller.x += offset;
+            if (roller.x + roller.width > x + width) roller.x = x + width - roller.width;
+        }
+       
+        DrawRectangle(x, y, width, height, GRAY);
         DrawRectangleRounded(roller, 10, 5, WHITE);
-        //DrawRectangleLinesEx({ x, y, width, height }, 3, BLACK);
+        DrawRectangleLinesEx({ x, y, width, height }, 3, BLACK);
     }
 
     float getOffset() const{
