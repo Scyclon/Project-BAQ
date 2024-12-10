@@ -31,6 +31,7 @@ int selectedFileIndex = 0;
 int currentFolderIndex = 0;
 int selectedFolderIndex = 0;
 
+string fullDirectory;
 // Card Attribute
 vector<Flashcard>  flashcards;
 int currentCardIndex = 0;
@@ -38,10 +39,11 @@ int selectedCardIndex = 0;
 char frontInput[40] = "";
 char backInput[40] = "";
 bool cardEditMode = false;
-vector<Button> existingFile;
-vector<Button> bFlashcardsFront;
-vector<Button> bFlashcardsBack;
-vector<FlipCard> bFlashcards;
+vector<string> existingFile;
+vector<Button> bExistingFile;
+//vector<Button> bFlashcardsFront;
+//vector<Button> bFlashcardsBack;
+vector<FlipCard> fFlashcards;
 
 // General object
 Button bHome(1110, 20, 60, 60, "HOME",WHITE,DARKBLUE);
@@ -91,7 +93,7 @@ float initFolderY = 130;
 float boxFolderHeight = 40;
 float offsetY = 0;
 Roller rCreateFileRoller(1220, 120, 20, 400, (float)((boxFileHeight + 100)* flashcards.size() + 400), true);
-Roller rCreateFolderRoller(1220, 120, 20, 400, (float)((boxFolderHeight + 100)* existingFolder.size() + 400), true);
+Roller rFolderRoller(1220, 120, 20, 400, (float)((boxFolderHeight + 100)* existingFolder.size() + 400), true);
 
 InputBox ibNewFolder(40, 560, 1000, 50, "New Folder", 30);
 
@@ -131,7 +133,8 @@ void DrawCreatePage() {
                     }
 
                     // Delete chosen Card
-                    if (is_chosen({ 1000,(float)(initFileY + (i * 100)) - offsetY ,50,boxFileHeight * 2 })) {
+                    DrawRecWithLines(1070, (float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY, 50, boxFolderHeight * 2, RED, 3);
+                    if (is_chosen({ 1070, (float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY, 50, boxFolderHeight * 2 })) {
                         flashcards.erase(flashcards.begin() + i);
                         cardEditMode = false;
                     }
@@ -179,18 +182,14 @@ void DrawCreatePage() {
     else {
         for (size_t i = 0; i < existingFolder.size(); ++i) {
             if (((float)(initFolderY + (i * 100)) + boxFolderHeight - offsetY <= 560) && ((float)(initFolderY + (i * 100)) - offsetY >= 80)) {
-                /*DrawRectangle(50, (float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY, 1000, boxFolderHeight, WHITE);
-                DrawTextMiddle(existingFolder[i].c_str(), {50, (float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY, 1000, boxFolderHeight }, 30, BLACK);
-                DrawRectangleLinesEx({ 50, (float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY, 1000, boxFolderHeight}, 3, BLACK);
-                if (is_chosen({ 50, (float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY, 950, boxFolderHeight })) {
-                    currentFolderName = existingFolder[i];
-                }*/
                 bExistingFolder[i].SetY((float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY);
                 bExistingFolder[i].Draw();
-                
+                if (bExistingFolder[i].IsClicked()) currentFolderName = bExistingFolder[i].getLabel();
+
                 // Delete Folder
-                if (is_chosen({ 1000,(float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY ,50,boxFolderHeight })) {
-                    existingFolder.erase(existingFolder.begin() + i);
+                DrawRecWithLines(1070, (float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY, 50, boxFolderHeight, RED, 3);
+                if (is_chosen({ 1070,(float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY ,50,boxFolderHeight })) {
+                    remove_all(saveDirectory + "/" + bExistingFolder[i].getLabel());
                 }
             }
         }
@@ -199,17 +198,19 @@ void DrawCreatePage() {
             string fulldirectory = saveDirectory + "/" + currentFolderName;
             if (!exists(fulldirectory))
                 create_directories(fulldirectory);
+            if (!currentFileName.ends_with(".json")) currentFileName += ".json";
             SaveFlashcardToJson(flashcards, fulldirectory, currentFileName);
-            flashcards.clear();
-            bExistingFolder.clear();
+            //flashcards.clear();
+            //existingFile.clear();
+            //bExistingFolder.clear();
             isCreatingFile = true;
             currentFolderName = "Default";
             currentFileName = "untiled";
-            currentPage = HOME;
+            currentPage = LIBRARY;
         }
             
-        rCreateFolderRoller.Draw();
-        offsetY = rCreateFolderRoller.getOffset();
+        rFolderRoller.Draw();
+        offsetY = rFolderRoller.getOffset();
 
         DrawRectangle(40, 40, 1200, 80, bgColor);
         DrawRectangle(40, 520, 1200, 80, bgColor);
@@ -217,19 +218,25 @@ void DrawCreatePage() {
         
         ibNewFolder.Draw();
         if (!ibNewFolder.GetText().empty() && GetKeyPressed() == KEY_ENTER) {
-            string fulldirectory = saveDirectory + "/" + ibNewFolder.GetText();
-            if (!exists(fulldirectory))
-                create_directories(fulldirectory);
+            fullDirectory = saveDirectory + "/" + ibNewFolder.GetText();
+            if (!exists(fullDirectory))
+                create_directories(fullDirectory);
         }
     }
     
     bHome.Draw();
     bSetting.Draw();
     if (bHome.IsClicked()) {
+        ibFileName.Clear();
+        ibInputFront.Clear();
+        ibInputBack.Clear();
+        existingFolder.clear();
+        bExistingFolder.clear();
         flashcards.clear();
         currentPage = HOME;
     }
     existingFolder.clear();
+    bExistingFolder.clear();
 }
 
 
@@ -269,13 +276,110 @@ void DrawCreatePage() {
     flashcards.clear();
 }
 */
-
+bool choosingFolder = true;
+Button bNext(920,605,100,50,">>",GREEN,BLUE);
+Button bBack(260, 605, 100, 50, "<<", GREEN, BLUE);
+enum LibraryStage {
+    CHOOSEFOLDER,
+    CHOOSEFILE,
+    EDITCARD,
+    FLIPCARD
+};
+LibraryStage currentStage = CHOOSEFOLDER;
 // Library Page
 void DrawLibraryPage() {
+    for (const auto& saveFolderName : GetSavedFolder(saveDirectory))
+        existingFolder.emplace_back(saveFolderName);
+    for (size_t i = 0; i < existingFolder.size(); ++i)
+        bExistingFolder.emplace_back(50, (float)(initFolderY + (i * boxFolderHeight * 1.5)), 1000, boxFolderHeight, existingFolder[i], WHITE, BLACK);
+
+    
+
+    switch (currentStage) {
+    case CHOOSEFOLDER:
+        DrawRectangle(40, 120, 1200, 400, GRAY); // Draw frame
+        for (size_t i = 0; i < existingFolder.size(); ++i) {
+            if (((float)(initFolderY + (i * 100)) + boxFolderHeight - offsetY <= 560) && ((float)(initFolderY + (i * 100)) - offsetY >= 80)) {
+                bExistingFolder[i].SetY((float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY);
+                bExistingFolder[i].Draw();
+                if (bExistingFolder[i].IsClicked()) {
+                    currentFolderName = bExistingFolder[i].getLabel();
+                    currentStage = CHOOSEFILE;
+                }
+                // Delete Folder
+                DrawRecWithLines(1070, (float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY, 50, boxFolderHeight, RED, 3);
+                if (is_chosen({ 1070,(float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY ,50,boxFolderHeight })) {
+                    remove_all(saveDirectory + "/" + bExistingFolder[i].getLabel());
+                }
+            }
+        }
+        rFolderRoller.Draw();
+        offsetY = rFolderRoller.getOffset();
+
+        DrawRectangle(40, 40, 1200, 80, bgColor);
+        DrawRectangle(40, 520, 1200, 80, bgColor);
+        DrawRectangleLinesEx({ 40, 120, 1200, 400 }, 3, BLACK);
+        break;
+    case CHOOSEFILE:
+        DrawRectangle(40, 120, 1200, 400, GRAY); // Draw frame
+        fullDirectory = saveDirectory + "/" + currentFolderName;
+        for (const auto& fileName : GetSavedFiles(fullDirectory))
+            existingFile.emplace_back(fileName);
+        for (size_t i = 0; i < existingFile.size(); ++i)
+            bExistingFile.emplace_back(50, (float)(initFileY + (i * boxFileHeight * 1.5)), 1000, boxFileHeight, existingFile[i], WHITE, BLACK);
+
+        for (size_t i = 0; i < bExistingFile.size(); ++i) {
+            if (((float)(initFolderY + (i * 100)) + boxFolderHeight - offsetY <= 560) && ((float)(initFolderY + (i * 100)) - offsetY >= 80)) {
+                bExistingFile[i].SetY((float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY);
+                bExistingFile[i].Draw();
+                if (bExistingFile[i].IsClicked()) {
+                    currentFileName = bExistingFile[i].getLabel();
+                    flashcards = LoadFlashcardFromJson(fullDirectory,currentFileName);
+                    currentStage = FLIPCARD;
+                }
+                // Delete Folder
+                DrawRecWithLines(1070, (float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY, 50, boxFolderHeight, RED, 3);
+                if (is_chosen({ 1070,(float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY ,50,boxFolderHeight })) {
+                    remove_all(saveDirectory + "/" + currentFolderName + "/" + currentFileName);
+                }
+            }
+        }
+        break;
+    case EDITCARD:
+
+        break;
+    case FLIPCARD:
+        for (size_t i = 0; i < flashcards.size(); ++i)
+            fFlashcards.emplace_back(240,135,800,450,flashcards[i].getFront(),30,flashcards[i].getBack(),30);
+        fFlashcards[currentCardIndex].DrawFlipH(GetFrameTime());
+        fFlashcards[currentCardIndex].StartFlip();
+
+        bNext.Draw();
+        bBack.Draw();
+        if (bNext.IsClicked() && currentCardIndex < fFlashcards.size()-1) ++currentCardIndex;
+        if (bBack.IsClicked() && currentCardIndex > 0) --currentCardIndex;
+        break;
+    }
+    
     bHome.Draw();
     bSetting.Draw();
-
-    if (bHome.IsClicked()) currentPage = HOME;
+    if (bHome.IsClicked()) {
+        existingFolder.clear();
+        bExistingFolder.clear();
+        existingFile.clear();
+        bExistingFile.clear();
+        fFlashcards.clear();
+        flashcards.clear();
+        currentCardIndex = 0;
+        currentStage = CHOOSEFOLDER;
+        currentPage = HOME;
+    }
+    
+    existingFolder.clear();
+    bExistingFolder.clear();
+    existingFile.clear();
+    bExistingFile.clear();
+    fFlashcards.clear();
 }
 
 /*
