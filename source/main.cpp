@@ -109,7 +109,6 @@ void DrawCreatePage() {
     DrawRectangle(40, 120, 1200, 400, GRAY); // Draw frame
 
     if (isCreatingFile) {
-        //offsetY = rCreateFileRoller.getOffset();
         if (!flashcards.empty()) {
             for (size_t i = 0; i < flashcards.size(); ++i) {
                 if (((float)(initFileY + (i * 100)) + boxFileHeight - offsetY <= 560) && ((float)(initFileY + (i * 100)) - offsetY >= 80)) {
@@ -123,9 +122,9 @@ void DrawCreatePage() {
                 if (((float)(initFileY + (i * 100)) + boxFileHeight * 2 - offsetY <= 600) && ((float)(initFileY + (i * 100)) - offsetY >= 80)) {
                     DrawRectangleLinesEx({ 50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight * 2 }, 3, BLACK);
                     DrawLineEx({ 50,(float)(initFileY + (i * 100)) + boxFileHeight - offsetY }, { 1050,(float)(initFileY + (i * 100)) + boxFileHeight - offsetY }, 3, BLACK);
-
+                    
                     // Edit-Mode
-                    if (is_chosen({ 50, (float)(initFileY + (i * 100)) - offsetY, 950, boxFileHeight * 2 })) {
+                    if (is_chosen({ 50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight * 2 }) && GetMousePosition().y > 120 && GetMousePosition().y < 520) {
                         ibInputFront.SetText(flashcards[i].getFront());
                         ibInputBack.SetText(flashcards[i].getBack());
                         currentCardIndex = i;
@@ -133,8 +132,8 @@ void DrawCreatePage() {
                     }
 
                     // Delete chosen Card
-                    DrawRecWithLines(1070, (float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY, 50, boxFolderHeight * 2, RED, 3);
-                    if (is_chosen({ 1070, (float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY, 50, boxFolderHeight * 2 })) {
+                    DrawRecWithLines(1070, (float)(initFileY + (i * 100)) - offsetY, 50, boxFolderHeight * 2, RED, 3);
+                    if (is_chosen({ 1070, (float)(initFileY + (i * 100)) - offsetY, 50, boxFolderHeight * 2 }) && GetMousePosition().y > 120 && GetMousePosition().y < 520) {
                         flashcards.erase(flashcards.begin() + i);
                         cardEditMode = false;
                     }
@@ -176,8 +175,9 @@ void DrawCreatePage() {
         }
 
         // Display total number of cards
+        string total = "Total: " + to_string(flashcards.size());
         DrawRecWithLines(1080, 645, 160, 35, WHITE, 3); //Total Card number
-        DrawTextCentered("Total:", { 1080, 645, 160, 35 }, 25, BLUE);
+        DrawTextCentered(total.c_str(), {1080, 645, 160, 35}, 25, BLUE);
     }
     else {
         for (size_t i = 0; i < existingFolder.size(); ++i) {
@@ -195,11 +195,11 @@ void DrawCreatePage() {
         }
         bFinishFile.Draw();
         if (bFinishFile.IsClicked()) {
-            string fulldirectory = saveDirectory + "/" + currentFolderName;
-            if (!exists(fulldirectory))
-                create_directories(fulldirectory);
+            fullDirectory = saveDirectory + "/" + currentFolderName;
+            if (!exists(fullDirectory))
+                create_directories(fullDirectory);
             if (!currentFileName.ends_with(".json")) currentFileName += ".json";
-            SaveFlashcardToJson(flashcards, fulldirectory, currentFileName);
+            SaveFlashcardToJson(flashcards, fullDirectory, currentFileName);
             //flashcards.clear();
             //existingFile.clear();
             //bExistingFolder.clear();
@@ -280,12 +280,12 @@ bool choosingFolder = true;
 Button bNext(920,605,100,50,">>",GREEN,BLUE);
 Button bBack(260, 605, 100, 50, "<<", GREEN, BLUE);
 enum LibraryStage {
-    CHOOSEFOLDER,
-    CHOOSEFILE,
+    VIEWFOLDER,
+    VIEWFILE,
     EDITCARD,
     FLIPCARD
 };
-LibraryStage currentStage = CHOOSEFOLDER;
+LibraryStage currentStage = VIEWFOLDER;
 // Library Page
 void DrawLibraryPage() {
     for (const auto& saveFolderName : GetSavedFolder(saveDirectory))
@@ -293,10 +293,10 @@ void DrawLibraryPage() {
     for (size_t i = 0; i < existingFolder.size(); ++i)
         bExistingFolder.emplace_back(50, (float)(initFolderY + (i * boxFolderHeight * 1.5)), 1000, boxFolderHeight, existingFolder[i], WHITE, BLACK);
 
-    
+
 
     switch (currentStage) {
-    case CHOOSEFOLDER:
+    case VIEWFOLDER: {
         DrawRectangle(40, 120, 1200, 400, GRAY); // Draw frame
         for (size_t i = 0; i < existingFolder.size(); ++i) {
             if (((float)(initFolderY + (i * 100)) + boxFolderHeight - offsetY <= 560) && ((float)(initFolderY + (i * 100)) - offsetY >= 80)) {
@@ -304,7 +304,7 @@ void DrawLibraryPage() {
                 bExistingFolder[i].Draw();
                 if (bExistingFolder[i].IsClicked()) {
                     currentFolderName = bExistingFolder[i].getLabel();
-                    currentStage = CHOOSEFILE;
+                    currentStage = VIEWFILE;
                 }
                 // Delete Folder
                 DrawRecWithLines(1070, (float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY, 50, boxFolderHeight, RED, 3);
@@ -320,7 +320,9 @@ void DrawLibraryPage() {
         DrawRectangle(40, 520, 1200, 80, bgColor);
         DrawRectangleLinesEx({ 40, 120, 1200, 400 }, 3, BLACK);
         break;
-    case CHOOSEFILE:
+    }
+    case VIEWFILE:
+    {
         DrawRectangle(40, 120, 1200, 400, GRAY); // Draw frame
         fullDirectory = saveDirectory + "/" + currentFolderName;
         for (const auto& fileName : GetSavedFiles(fullDirectory))
@@ -334,33 +336,129 @@ void DrawLibraryPage() {
                 bExistingFile[i].Draw();
                 if (bExistingFile[i].IsClicked()) {
                     currentFileName = bExistingFile[i].getLabel();
-                    flashcards = LoadFlashcardFromJson(fullDirectory,currentFileName);
+                    if (!currentFileName.ends_with(".json")) currentFileName += ".json";
+                    flashcards = LoadFlashcardFromJson(fullDirectory, currentFileName);
                     currentStage = FLIPCARD;
                 }
+
+                DrawRecWithLines(1140, (float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY, 50, boxFolderHeight, DARKGRAY, 3);
+                if (is_chosen({ 1140,(float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY ,50,boxFolderHeight })) {
+                    currentFileName = bExistingFile[i].getLabel();
+                    if (!currentFileName.ends_with(".json")) currentFileName += ".json";
+                    flashcards = LoadFlashcardFromJson(fullDirectory, currentFileName);
+                    currentStage = EDITCARD;
+                }
+
                 // Delete Folder
                 DrawRecWithLines(1070, (float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY, 50, boxFolderHeight, RED, 3);
                 if (is_chosen({ 1070,(float)(initFolderY + (i * boxFolderHeight * 1.5)) - offsetY ,50,boxFolderHeight })) {
+                    currentFileName = bExistingFile[i].getLabel();
+                    if (!currentFileName.ends_with(".json")) currentFileName += ".json";
                     remove_all(saveDirectory + "/" + currentFolderName + "/" + currentFileName);
                 }
             }
         }
         break;
-    case EDITCARD:
+    }
+    case EDITCARD: {
+        if (!flashcards.empty()) {
+            for (size_t i = 0; i < flashcards.size(); ++i) {
+                if (((float)(initFileY + (i * 100)) + boxFileHeight - offsetY <= 560) && ((float)(initFileY + (i * 100)) - offsetY >= 80)) {
+                    DrawRectangle(50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight, WHITE);
+                    DrawTextMiddle(flashcards[i].getFront().c_str(), { 50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight }, 30, BLUE);
+                }
+                if (((float)(initFileY + (i * 100)) + boxFileHeight - offsetY <= 560) && ((float)(initFileY + (i * 100)) - offsetY >= 80)) {
+                    DrawRectangle(50, (float)(initFileY + boxFileHeight + (i * 100)) - offsetY, 1000, boxFileHeight, WHITE);
+                    DrawTextMiddle(flashcards[i].getBack().c_str(), { 50, (float)(initFileY + boxFileHeight + (i * 100)) - offsetY, 1000, boxFileHeight }, 30, BLUE);
+                }
+                if (((float)(initFileY + (i * 100)) + boxFileHeight * 2 - offsetY <= 600) && ((float)(initFileY + (i * 100)) - offsetY >= 80)) {
+                    DrawRectangleLinesEx({ 50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight * 2 }, 3, BLACK);
+                    DrawLineEx({ 50,(float)(initFileY + (i * 100)) + boxFileHeight - offsetY }, { 1050,(float)(initFileY + (i * 100)) + boxFileHeight - offsetY }, 3, BLACK);
 
+                    // Edit-Mode
+                    if (is_chosen({ 50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight * 2 }) && GetMousePosition().y > 120 && GetMousePosition().y < 520) {
+                        ibInputFront.SetText(flashcards[i].getFront());
+                        ibInputBack.SetText(flashcards[i].getBack());
+                        currentCardIndex = i;
+                        cardEditMode = true;
+                    }
+
+                    // Delete chosen Card
+                    DrawRecWithLines(1070, (float)(initFileY + (i * 100)) - offsetY, 50, boxFolderHeight * 2, RED, 3);
+                    if (is_chosen({ 1070, (float)(initFileY + (i * 100)) - offsetY, 50, boxFolderHeight * 2 }) && GetMousePosition().y > 120 && GetMousePosition().y < 520) {
+                        flashcards.erase(flashcards.begin() + i);
+                        cardEditMode = false;
+                    }
+                }
+            }
+        }
+        rCreateFileRoller.Draw();
+        offsetY = rCreateFileRoller.getOffset();
+
+        DrawRectangle(40, 40, 1200, 80, bgColor);
+        DrawRectangle(40, 520, 1200, 80, bgColor);
+        DrawRectangleLinesEx({ 40, 120, 1200, 400 }, 3, BLACK);
+
+        // Typing Box
+        ibFileName.Draw();
+        ibInputFront.Draw();
+        ibInputBack.Draw();
+
+        // Function Button
+        bSaveCard.Draw();
+        bFinishDeck.Draw();
+        if (bSaveCard.IsClicked() && !ibInputFront.GetText().empty() && !ibInputBack.GetText().empty()) {
+            if (!cardEditMode) {
+                flashcards.emplace_back(ibInputFront.GetText(), ibInputBack.GetText());
+            }
+            else {
+                flashcards[currentCardIndex].setFront(ibInputFront.GetText());
+                flashcards[currentCardIndex].setBack(ibInputBack.GetText());
+                cardEditMode = false;
+            }
+            ibInputFront.Clear();
+            ibInputBack.Clear();
+        }
+        if (bFinishDeck.IsClicked() && !flashcards.empty()) {
+            if (!ibFileName.GetText().empty()) {
+                if (!currentFileName.ends_with(".json")) currentFileName += ".json";
+                remove_all(fullDirectory + "/" + currentFileName);
+                currentFileName = ibFileName.GetText();
+            }
+            if (!exists(fullDirectory))
+                create_directories(fullDirectory);
+            if (!currentFileName.ends_with(".json")) currentFileName += ".json";
+            SaveFlashcardToJson(flashcards, fullDirectory, currentFileName);
+                       
+            currentFolderName = "Default";
+            currentFileName = "untiled";
+            flashcards.clear();
+            ibInputFront.Clear();
+            ibInputBack.Clear();
+            currentStage = VIEWFOLDER;
+        }
+        
+        // Display total number of cards
+        string total = "Total: " + to_string(flashcards.size());
+        DrawRecWithLines(1080, 645, 160, 35, WHITE, 3); //Total Card number
+        DrawTextCentered(total.c_str(), {1080, 645, 160, 35}, 25, BLUE);
         break;
-    case FLIPCARD:
+    }
+    case FLIPCARD: {
+        if(fFlashcards.empty())
         for (size_t i = 0; i < flashcards.size(); ++i)
-            fFlashcards.emplace_back(240,135,800,450,flashcards[i].getFront(),30,flashcards[i].getBack(),30);
+            fFlashcards.emplace_back(240, 135, 800, 450, flashcards[i].getFront(), 30, flashcards[i].getBack(), 30);
         fFlashcards[currentCardIndex].DrawFlipH(GetFrameTime());
         fFlashcards[currentCardIndex].StartFlip();
 
         bNext.Draw();
         bBack.Draw();
-        if (bNext.IsClicked() && currentCardIndex < fFlashcards.size()-1) ++currentCardIndex;
+        if (bNext.IsClicked() && currentCardIndex < fFlashcards.size() - 1) ++currentCardIndex;
         if (bBack.IsClicked() && currentCardIndex > 0) --currentCardIndex;
         break;
     }
-    
+    }
+
     bHome.Draw();
     bSetting.Draw();
     if (bHome.IsClicked()) {
@@ -371,15 +469,15 @@ void DrawLibraryPage() {
         fFlashcards.clear();
         flashcards.clear();
         currentCardIndex = 0;
-        currentStage = CHOOSEFOLDER;
+        currentStage = VIEWFOLDER;
         currentPage = HOME;
     }
-    
+
     existingFolder.clear();
     bExistingFolder.clear();
     existingFile.clear();
     bExistingFile.clear();
-    fFlashcards.clear();
+    //fFlashcards.clear();
 }
 
 /*
