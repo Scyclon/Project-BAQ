@@ -136,9 +136,9 @@ public:
         }
 
         if (isTyping) {
-            framecounter++;
+            //framecounter++;
             int key = GetKeyPressed();
-            if (key != 0 && key != KEY_ENTER && key != KEY_BACKSPACE && text.length() < maxChar)
+            if (key != 0 && key != KEY_ENTER && key != KEY_BACKSPACE && key != KEY_LEFT_SHIFT &&text.length() < maxChar)
                 text += key;
             if (IsKeyPressed(KEY_BACKSPACE) && !text.empty())
                 text.pop_back();

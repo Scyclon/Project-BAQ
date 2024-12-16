@@ -18,6 +18,7 @@ string currentFolderName = "Default";
 // Pages
 enum AppPage {
     HOME,
+    SETTING,
     CREATE,
     LIBRARY,
     FLASHCARD,
@@ -69,9 +70,62 @@ void DrawHomePage() {
     
     bNew.Draw();
     bLibrary.Draw();
+    if (bSetting.IsClicked()) currentPage = SETTING;
     if (bNew.IsClicked()) currentPage = CREATE;
     if (bLibrary.IsClicked()) currentPage = LIBRARY;
     //if (bSetting.IsClicked()) { DrawSettingPopUp(); }
+}
+
+Music bgMusic;
+Button bPauseMusic(890,80,50,40,"Pause",WHITE,BLUE);
+Button bChooseMusic(495, 445, 280, 40,"Play",WHITE,BLUE);
+Button bVolUp(780,600,50,40,">>>",WHITE,BLUE);
+Button bVolDown(440, 600, 50, 40, "<<<", WHITE, BLUE);
+Button bNextMusic(780, 400, 50, 40, ">>>", WHITE, BLUE);
+Button bPreviousMusic(440, 400, 50, 40, "<<<", WHITE, BLUE);
+vector<string> existingMusic;
+int currentMusicIndex = 0;
+float musicVolume;
+bool isMusicPlaying = true;
+void DrawSettingPage() {
+    for (const auto& fileName : directory_iterator("resources"))
+        if (fileName.path().extension() == ".mp3" || fileName.path().extension() == ".wav" || fileName.path().extension() == ".ogg") // look for music file
+            existingMusic.emplace_back(fileName.path().filename().string());
+    DrawRecWithLines(300, 40, 680, 640, WHITE, 3);
+
+    DrawRecWithLines(495, 400, 280, 40, WHITE, 3);
+    DrawTextCentered(existingMusic[currentMusicIndex].c_str(), { 495, 400, 280, 40 }, 15, BLACK);
+    bNextMusic.Draw();
+    bPreviousMusic.Draw();
+    bChooseMusic.Draw();
+    if (bNextMusic.IsClicked() && currentMusicIndex < existingMusic.size() - 1) ++currentMusicIndex;
+    if (bPreviousMusic.IsClicked() && currentMusicIndex > 0) --currentMusicIndex;
+    if (bChooseMusic.IsClicked()) {
+        bgMusic = LoadMusicStream(("resources/" + existingMusic[currentMusicIndex]).c_str());
+        PlayMusicStream(bgMusic);
+        SetMusicVolume(bgMusic, musicVolume);
+    }
+    //DrawRectangleLinesEx({340,80,300,400}, 3, BLACK);
+
+
+    bPauseMusic.Draw();
+    if (bPauseMusic.IsClicked()) {
+        if (isMusicPlaying) PauseMusicStream(bgMusic);
+        else ResumeMusicStream(bgMusic);
+        isMusicPlaying = !isMusicPlaying;
+    }
+
+    bVolDown.Draw();
+    bVolUp.Draw();
+    if (bVolDown.IsClicked() && musicVolume > 0) musicVolume -= 0.05;
+    if (bVolUp.IsClicked() && musicVolume < 1.0) musicVolume += 0.05;
+    SetMusicVolume(bgMusic, musicVolume);
+    DrawTextCentered((to_string((int)(musicVolume * 100)) + "%").c_str(), { 490,600,290,40 }, 20, BLUE);
+    
+    bHome.Draw();
+    if (bHome.IsClicked()) currentPage = HOME;
+
+    existingMusic.clear();
 }
 
 // Create-File
@@ -95,7 +149,7 @@ float offsetY = 0;
 Roller rCreateFileRoller(1220, 120, 20, 400, (float)((boxFileHeight + 100)* flashcards.size() + 400), true);
 Roller rFolderRoller(1220, 120, 20, 400, (float)((boxFolderHeight + 100)* existingFolder.size() + 400), true);
 
-InputBox ibNewFolder(40, 560, 1000, 50, "New Folder", 30);
+InputBox ibNewFolder(40, 630, 1000, 50, "Create New Folder", 30);
 
 
 
@@ -222,6 +276,8 @@ void DrawCreatePage() {
             if (!exists(fullDirectory))
                 create_directories(fullDirectory);
         }
+        DrawRecWithLines(40, 560, 1000, 50, WHITE, 3);
+        DrawTextCentered(currentFolderName.c_str(), {40, 560, 1000, 50}, 30, BLACK);
     }
     
     bHome.Draw();
@@ -241,41 +297,7 @@ void DrawCreatePage() {
 
 
 
-/*void DrawCreateFolderPage() {
-    bHome.Draw();
-    bSetting.Draw();
-    if (bHome.IsClicked()) currentPage = HOME;
 
-    
-
-    // Flashcard display
-    DrawRectangle(40, 120, 1200, 400, GRAY); // Draw frame
-    offsetY = rCreateFileRoller.getOffset();
-    if (!flashcards.empty()) {
-
-        for (size_t i = 0; i < existingFolder.size(); ++i) {
-            if (((float)(initFileY + (i * 100)) + boxFileHeight - offsetY <= 560) && ((float)(initFileY + (i * 100)) - offsetY >= 80)) {
-                DrawRectangle(50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight, WHITE);
-                DrawTextMiddle(existingFolder[i].c_str(), {50, (float)(initFileY + (i * 100)) - offsetY, 1000, boxFileHeight}, 30, BLUE);
-            }
-        }
-    }
-    DrawRectangle(40, 40, 1200, 80, bgColor);
-    DrawRectangle(40, 520, 1200, 80, bgColor);
-    DrawRectangleLinesEx({ 40, 120, 1200, 400 }, 3, BLACK);
-    rCreateFileRoller.Draw();
-    offsetY = rCreateFileRoller.getOffset();
-
-
-
-
-    string fulldirectory = saveDirectory + "/" + currentFolderName;
-    if (!exists(fulldirectory))
-        create_directories(fulldirectory);
-    SaveFlashcardToJson(flashcards, fulldirectory, currentFileName);
-    flashcards.clear();
-}
-*/
 bool choosingFolder = true;
 Button bNext(920,605,100,50,">>",GREEN,BLUE);
 Button bBack(260, 605, 100, 50, "<<", GREEN, BLUE);
@@ -457,6 +479,7 @@ void DrawLibraryPage() {
         if (bBack.IsClicked() && currentCardIndex > 0) --currentCardIndex;
         break;
     }
+
     }
 
     bHome.Draw();
@@ -480,151 +503,23 @@ void DrawLibraryPage() {
     //fFlashcards.clear();
 }
 
-/*
-// Create Deck Page
-void DrawCreateDeckPage() {
-    DrawTextCentered("Create New Deck", { 200, 60, 400, 60 }, 30, DARKBLUE);
 
-    if (strlen(frontInput) == 0) DrawTextMiddle("Enter Front:", { 57, 177, 686, 46 }, 100, BLACK);
-    DrawRectangle(50, 170, 700, 60, LIGHTGRAY);
-    DrawRectangle(57, 177, 686, 46, WHITE);
-    DrawTextMiddle(frontInput, { 57, 177, 686, 46 }, 100, BLACK);
-    if (is_mouse_hovered({ 57, 177, 686, 46 })) {
-        int key = GetKeyPressed();
-        if (key != 0 && key != KEY_ENTER && key != KEY_BACKSPACE && strlen(frontInput) < 128) {
-            frontInput[strlen(frontInput)] = (char)key;
-        }
-        if (IsKeyPressed(KEY_BACKSPACE) && strlen(frontInput) > 0) {
-            frontInput[strlen(frontInput) - 1] = '\0';
-        }
-    }
-    
-    if (strlen(backInput) == 0) DrawTextMiddle("Enter Back:", { 57, 277, 686, 46 }, 100, BLACK);
-    DrawRectangle(50, 270, 700, 60, LIGHTGRAY);
-    DrawRectangle(57, 277, 686, 46, WHITE);
-    DrawTextMiddle(backInput, { 57, 277, 686, 46 }, 100, BLACK);
-    if (is_mouse_hovered({ 57, 277, 686, 46 })) {
-        SetMouseCursor(MOUSE_CURSOR_IBEAM);
-        int key = GetKeyPressed();
-        if (key != 0 && key != KEY_ENTER && key != KEY_BACKSPACE && strlen(backInput) < 128) {
-            backInput[strlen(backInput)] = (char)key;
-        }
-        if (IsKeyPressed(KEY_BACKSPACE) && strlen(backInput) > 0) {
-            backInput[strlen(backInput) - 1] = '\0';
-        }
-    }
-
-    if (strlen(saveAsName) == 0) DrawTextCentered("File Name", { 57, 377, 500, 40 }, 100, BLACK);
-    else DrawTextCentered(saveAsName, { 57, 377, 500, 40 }, 100, BLACK);
-    if (is_mouse_hovered({ 57, 377, 500, 40 })) {
-        SetMouseCursor(MOUSE_CURSOR_IBEAM);
-        int key = GetKeyPressed();
-        if (key != 0 && key != KEY_ENTER && key != KEY_BACKSPACE && strlen(saveAsName) < 128) {
-            saveAsName[strlen(saveAsName)] = (char)key;
-        }
-        if (IsKeyPressed(KEY_BACKSPACE) && strlen(saveAsName) > 0) {
-            saveAsName[strlen(saveAsName) - 1] = '\0';
-        }
-    }
-
-    previousCardButton.Draw();
-    saveCardButton.Draw();
-    finishDeckButton.Draw();
-
-    // go back to prervious card
-    if (previousCardButton.IsClicked() && flashcards.size()>0 && currentPage == CREATE_DECK) {
-        memset(frontInput, 0, sizeof(frontInput)); // empty the string
-        memset(backInput, 0, sizeof(backInput));
-        strcpy_s(frontInput, flashcards[flashcards.size() - 1].getFront().c_str());
-        strcpy_s(backInput, flashcards[flashcards.size() - 1].getBack().c_str());
-        flashcards.pop_back();
-    }
-
-    // save the current card
-    if (saveCardButton.IsClicked() && currentPage == CREATE_DECK) {
-        flashcards.emplace_back(frontInput, backInput); // function the same with put_back() but more stable
-        memset(frontInput, 0, sizeof(frontInput)); // empty the string
-        memset(backInput, 0, sizeof(backInput));
-    }
-
-    // save the current card deck
-    if (finishDeckButton.IsClicked() && currentPage == CREATE_DECK) {
-        if (strlen(saveAsName) > 0) fileName = saveAsName;
-        if (!fileName.ends_with(".json")) fileName += ".json";
-        SaveFlashcardToJson(flashcards, saveDirectory, fileName);
-        currentPage = LIBRARY;
-    }
-
-    // back to HOME
-    backButton.Draw();
-    if (backButton.IsClicked() && currentPage == CREATE_DECK) {
-        currentPage = HOME;
-    }
-}
-
-void DrawLibraryPage() {
-    DrawText("Library - Select a Deck", 200, 50, 30, DARKBLUE);
-    vector<string> savedFiles = GetSavedFiles(saveDirectory);
-    existingFile.clear();
-    int yOffset = 60;
-    // List the existing files
-    for (size_t i = 0; i < savedFiles.size(); ++i) {
-        existingFile.emplace_back(10, yOffset, 120, 30, savedFiles[i].erase(savedFiles[i].find_last_of("."), string::npos));
-        existingFile[i].Draw();
-        yOffset += 40;
-    }
-
-    // Card Deck select
-    for (int i = 0; i < existingFile.size(); ++i)
-        if (existingFile[i].IsClicked() && currentPage == LIBRARY) {
-            flashcards = LoadFlashcardFromJson(saveDirectory, existingFile[i].getLabel() + ".json");
-            currentPage = FLASHCARD; 
-        }
-
-    // Draw Back button
-    backButton.Draw();
-    if (backButton.IsClicked() && currentPage == LIBRARY) {
-        currentPage = HOME;
-    }
-}
-
-void DrawFlashcardPage() {
-    bFlashcardsFront.clear();
-    bFlashcardsBack.clear();
-    bool showBack = false;
-    int xOffset = 10;
-    int yOffset = 10;
-
-    // Get Data from Flashcard-object to Button-object
-    for (size_t i = 0; i < flashcards.size(); ++i) {
-        bFlashcardsFront.emplace_back(100,yOffset,200,50,flashcards[i].getFront()); // x , y, width, height, text/content
-        bFlashcardsBack.emplace_back(100 + xOffset,yOffset,200,50,flashcards[i].getBack());
-    }
-
-    // Draw the Flashcards as Button-object
-    for (size_t i = 0; i < flashcards.size(); ++i) {
-        bFlashcardsFront[i].Draw();
-        if (showBack) bFlashcardsBack[i].Draw();
-    }
-
-    // Draw Next and Back button
-
-
-    int yOffset = 70;
-    for (size_t i = 0; i < flashcards.size(); ++i) {
-        bFlashcards.emplace_back(100, yOffset, 200, 50, flashcards[i].getFront(), flashcards[i].getBack()); // x , y, width, height, text/content
-    }
-    for (size_t i = 0; i < flashcards.size(); ++i) {
-        bFlashcards[i].StartFlip();
-        bFlashcards[i].Draw(GetFrameTime());
-    }
-
-}*/
 
 // Main Loop
 int main() {
     InitWindow(1280, 720, "Flashcard App");
+    InitAudioDevice();
     SetTargetFPS(60);
+
+    // Load Music
+    for (const auto& fileName : directory_iterator("resources"))
+        if (fileName.path().extension() == ".mp3" || fileName.path().extension() == ".wav" || fileName.path().extension() == ".ogg") // look for music file
+            existingMusic.emplace_back(fileName.path().filename().string());
+    bgMusic = LoadMusicStream(("resources/" + existingMusic[0]).c_str()); //music file directory
+    musicVolume = 0.5;
+    PlayMusicStream(bgMusic);
+    SetMusicVolume(bgMusic, musicVolume);
+    existingMusic.clear();
 
     // Ensure save folder exists
     if (!exists(saveDirectory))
@@ -633,12 +528,17 @@ int main() {
         create_directories(saveDirectory + "/Default");
 
     while (!WindowShouldClose()) {
+        UpdateMusicStream(bgMusic);
+
         BeginDrawing();
         ClearBackground(bgColor);
         DrawRectangleLinesEx({ 3,3,1274,714 }, 3, BLACK);
         switch (currentPage) {
         case HOME:
             DrawHomePage();
+            break;
+        case SETTING:
+            DrawSettingPage();
             break;
         case CREATE:
             DrawCreatePage();
@@ -649,6 +549,10 @@ int main() {
         }
         EndDrawing();
     }
+
+    StopMusicStream(bgMusic);
+    UnloadMusicStream(bgMusic);
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }
