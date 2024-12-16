@@ -24,11 +24,11 @@ enum AppPage {
     FLASHCARD,
 };
 AppPage currentPage = HOME;
+AppPage previousPage = currentPage;
 
 // Input
 int currentFileIndex = 0;
 int selectedFileIndex = 0;
-
 int currentFolderIndex = 0;
 int selectedFolderIndex = 0;
 
@@ -42,13 +42,82 @@ char backInput[40] = "";
 bool cardEditMode = false;
 vector<string> existingFile;
 vector<Button> bExistingFile;
-//vector<Button> bFlashcardsFront;
-//vector<Button> bFlashcardsBack;
 vector<FlipCard> fFlashcards;
 
 // General object
 Button bHome(1110, 20, 60, 60, "HOME",WHITE,DARKBLUE);
 Button bSetting(1180, 20, 60, 60, "SET",WHITE,DARKBLUE);
+
+// Setting
+Music bgMusic;
+Button bPauseMusic(495, 445, 280, 40, "Pause/Play", WHITE, BLUE);
+Button bChooseMusic(495, 355, 280, 40, "Choose", WHITE, BLUE);
+Button bVolUp(780, 600, 50, 40, ">>>", WHITE, BLUE);
+Button bVolDown(440, 600, 50, 40, "<<<", WHITE, BLUE);
+Button bNextMusic(780, 400, 50, 40, ">>>", WHITE, BLUE);
+Button bPreviousMusic(440, 400, 50, 40, "<<<", WHITE, BLUE);
+vector<string> existingMusic;
+int currentMusicIndex = 0;
+float musicVolume;
+bool isMusicPlaying = true;
+void SettingPopUp() {
+    bSetting.Draw();
+    if (bSetting.IsClicked()) {
+        if (currentPage != SETTING) {
+            previousPage = currentPage;
+            currentPage = SETTING;
+        }
+        else currentPage = previousPage;
+    }
+}
+void DrawSettingPage() {
+    DrawRecWithLines(300, 40, 680, 640, WHITE, 3);
+
+    //Get Music File
+    for (const auto& fileName : directory_iterator("soundtracks"))
+        if (fileName.path().extension() == ".mp3" || fileName.path().extension() == ".wav" || fileName.path().extension() == ".ogg") // look for music file
+            existingMusic.emplace_back(fileName.path().filename().string());
+
+
+    //Draw Music List
+    DrawRecWithLines(495, 400, 280, 40, WHITE, 3);
+    bNextMusic.Draw();
+    bPreviousMusic.Draw();
+    bChooseMusic.Draw();
+    bVolDown.Draw();
+    bVolUp.Draw();
+    bPauseMusic.Draw();
+
+    if (!existingMusic.empty()) {
+        DrawTextCentered(existingMusic[currentMusicIndex].c_str(), { 495, 400, 280, 40 }, 15, BLACK);
+
+        if (bNextMusic.IsClicked() && currentMusicIndex < existingMusic.size() - 1) ++currentMusicIndex;
+        if (bPreviousMusic.IsClicked() && currentMusicIndex > 0) --currentMusicIndex;
+        if (bChooseMusic.IsClicked()) {
+            bgMusic = LoadMusicStream(("soundtracks/" + existingMusic[currentMusicIndex]).c_str());
+            PlayMusicStream(bgMusic);
+            SetMusicVolume(bgMusic, musicVolume);
+        }
+
+        if (bPauseMusic.IsClicked()) {
+            if (isMusicPlaying) PauseMusicStream(bgMusic);
+            else ResumeMusicStream(bgMusic);
+            isMusicPlaying = !isMusicPlaying;
+        }
+    }
+    else DrawTextCentered("No music file found", { 495, 400, 280, 40 }, 15, BLACK);
+    if (bVolDown.IsClicked() && musicVolume > 0) musicVolume -= 0.05;
+    if (bVolUp.IsClicked() && musicVolume < 1.0) musicVolume += 0.05;
+    SetMusicVolume(bgMusic, musicVolume);
+    DrawTextCentered("Music Volume", { 495,555,280,40 }, 20, BLUE);
+    DrawTextCentered((to_string((int)(musicVolume * 100)) + "%").c_str(), { 495,600,280,40 }, 20, BLUE);
+
+    bHome.Draw();
+    if (bHome.IsClicked()) currentPage = HOME;
+    existingMusic.clear();
+
+    SettingPopUp();
+}
 
 // HOMEPAGE object
 FlipCard WELCOME(140, 120, 800, 450, "WELCOME", 50, "", 30);
@@ -65,67 +134,12 @@ void DrawHomePage() {
         DrawTextCentered("Click [Library] to view your storage", { 140, 350, 800, 50 }, 50, BLUE);
     }
 
-    bHome.Draw();
-    bSetting.Draw();
-    
+    bHome.Draw();   
     bNew.Draw();
     bLibrary.Draw();
-    if (bSetting.IsClicked()) currentPage = SETTING;
     if (bNew.IsClicked()) currentPage = CREATE;
     if (bLibrary.IsClicked()) currentPage = LIBRARY;
-    //if (bSetting.IsClicked()) { DrawSettingPopUp(); }
-}
-
-Music bgMusic;
-Button bPauseMusic(890,80,50,40,"Pause",WHITE,BLUE);
-Button bChooseMusic(495, 445, 280, 40,"Play",WHITE,BLUE);
-Button bVolUp(780,600,50,40,">>>",WHITE,BLUE);
-Button bVolDown(440, 600, 50, 40, "<<<", WHITE, BLUE);
-Button bNextMusic(780, 400, 50, 40, ">>>", WHITE, BLUE);
-Button bPreviousMusic(440, 400, 50, 40, "<<<", WHITE, BLUE);
-vector<string> existingMusic;
-int currentMusicIndex = 0;
-float musicVolume;
-bool isMusicPlaying = true;
-void DrawSettingPage() {
-    for (const auto& fileName : directory_iterator("resources"))
-        if (fileName.path().extension() == ".mp3" || fileName.path().extension() == ".wav" || fileName.path().extension() == ".ogg") // look for music file
-            existingMusic.emplace_back(fileName.path().filename().string());
-    DrawRecWithLines(300, 40, 680, 640, WHITE, 3);
-
-    DrawRecWithLines(495, 400, 280, 40, WHITE, 3);
-    DrawTextCentered(existingMusic[currentMusicIndex].c_str(), { 495, 400, 280, 40 }, 15, BLACK);
-    bNextMusic.Draw();
-    bPreviousMusic.Draw();
-    bChooseMusic.Draw();
-    if (bNextMusic.IsClicked() && currentMusicIndex < existingMusic.size() - 1) ++currentMusicIndex;
-    if (bPreviousMusic.IsClicked() && currentMusicIndex > 0) --currentMusicIndex;
-    if (bChooseMusic.IsClicked()) {
-        bgMusic = LoadMusicStream(("resources/" + existingMusic[currentMusicIndex]).c_str());
-        PlayMusicStream(bgMusic);
-        SetMusicVolume(bgMusic, musicVolume);
-    }
-    //DrawRectangleLinesEx({340,80,300,400}, 3, BLACK);
-
-
-    bPauseMusic.Draw();
-    if (bPauseMusic.IsClicked()) {
-        if (isMusicPlaying) PauseMusicStream(bgMusic);
-        else ResumeMusicStream(bgMusic);
-        isMusicPlaying = !isMusicPlaying;
-    }
-
-    bVolDown.Draw();
-    bVolUp.Draw();
-    if (bVolDown.IsClicked() && musicVolume > 0) musicVolume -= 0.05;
-    if (bVolUp.IsClicked() && musicVolume < 1.0) musicVolume += 0.05;
-    SetMusicVolume(bgMusic, musicVolume);
-    DrawTextCentered((to_string((int)(musicVolume * 100)) + "%").c_str(), { 490,600,290,40 }, 20, BLUE);
-    
-    bHome.Draw();
-    if (bHome.IsClicked()) currentPage = HOME;
-
-    existingMusic.clear();
+    SettingPopUp();
 }
 
 // Create-File
@@ -293,11 +307,13 @@ void DrawCreatePage() {
     }
     existingFolder.clear();
     bExistingFolder.clear();
+
+    SettingPopUp();
 }
 
 
 
-
+// Library
 bool choosingFolder = true;
 Button bNext(920,605,100,50,">>",GREEN,BLUE);
 Button bBack(260, 605, 100, 50, "<<", GREEN, BLUE);
@@ -315,8 +331,7 @@ void DrawLibraryPage() {
     for (size_t i = 0; i < existingFolder.size(); ++i)
         bExistingFolder.emplace_back(50, (float)(initFolderY + (i * boxFolderHeight * 1.5)), 1000, boxFolderHeight, existingFolder[i], WHITE, BLACK);
 
-
-
+    // switch between stages in library
     switch (currentStage) {
     case VIEWFOLDER: {
         DrawRectangle(40, 120, 1200, 400, GRAY); // Draw frame
@@ -380,6 +395,12 @@ void DrawLibraryPage() {
                 }
             }
         }
+        rCreateFileRoller.Draw();
+        offsetY = rCreateFileRoller.getOffset();
+
+        DrawRectangle(40, 40, 1200, 80, bgColor);
+        DrawRectangle(40, 520, 1200, 80, bgColor);
+        DrawRectangleLinesEx({ 40, 120, 1200, 400 }, 3, BLACK);
         break;
     }
     case EDITCARD: {
@@ -483,7 +504,6 @@ void DrawLibraryPage() {
     }
 
     bHome.Draw();
-    bSetting.Draw();
     if (bHome.IsClicked()) {
         existingFolder.clear();
         bExistingFolder.clear();
@@ -501,6 +521,8 @@ void DrawLibraryPage() {
     existingFile.clear();
     bExistingFile.clear();
     //fFlashcards.clear();
+
+    SettingPopUp();
 }
 
 
@@ -511,21 +533,25 @@ int main() {
     InitAudioDevice();
     SetTargetFPS(60);
 
-    // Load Music
-    for (const auto& fileName : directory_iterator("resources"))
-        if (fileName.path().extension() == ".mp3" || fileName.path().extension() == ".wav" || fileName.path().extension() == ".ogg") // look for music file
-            existingMusic.emplace_back(fileName.path().filename().string());
-    bgMusic = LoadMusicStream(("resources/" + existingMusic[0]).c_str()); //music file directory
-    musicVolume = 0.5;
-    PlayMusicStream(bgMusic);
-    SetMusicVolume(bgMusic, musicVolume);
-    existingMusic.clear();
-
-    // Ensure save folder exists
+    // Ensure saves and soundtracks folder exists
     if (!exists(saveDirectory))
         create_directories(saveDirectory);
     if (!exists(saveDirectory + "/Default"))
         create_directories(saveDirectory + "/Default");
+    if (!exists("soundtracks"))
+        create_directories("soundtracks");
+
+    // Load Music
+    for (const auto& fileName : directory_iterator("soundtracks"))
+        if (fileName.path().extension() == ".mp3" || fileName.path().extension() == ".wav" || fileName.path().extension() == ".ogg") // look for music file
+            existingMusic.emplace_back(fileName.path().filename().string());
+    if (!existingMusic.empty())
+        bgMusic = LoadMusicStream(("soundtracks/" + existingMusic[0]).c_str()); //music file directory
+
+    musicVolume = 0.5;
+    PlayMusicStream(bgMusic);
+    SetMusicVolume(bgMusic, musicVolume);
+    existingMusic.clear();
 
     while (!WindowShouldClose()) {
         UpdateMusicStream(bgMusic);
